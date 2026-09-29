@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crop & Fertilizer Recommendation</title>
+<style>
+  :root { --bg:#f5f7f4; --card:#fff; --text:#1d2b1f; --muted:#5c6b5f; --accent:#2f7d4f; --border:#d9e0d8; --bar:#cfe8d8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#141a15; --card:#1c241e; --text:#e6eee7; --muted:#9fb0a2; --accent:#59b57c; --border:#2c382f; --bar:#264a35; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; }
+  h2 { margin:0 0 12px; font-size:1.1rem; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin-top:10px; }
+  input, select { width:100%; padding:8px 10px; margin-top:4px; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); font-size:1rem; }
+  button { margin-top:16px; width:100%; padding:10px; border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:1rem; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .result { margin-top:16px; }
+  .top { font-weight:600; font-size:1.05rem; margin-bottom:8px; }
+  .row { position:relative; margin:6px 0; padding:6px 8px; border-radius:6px; background:var(--bg); overflow:hidden; font-size:.9rem; }
+  .row .fill { position:absolute; inset:0 auto 0 0; background:var(--bar); }
+  .row span { position:relative; display:flex; justify-content:space-between; }
+  .err { color:#c0392b; font-size:.9rem; }
+  .note { margin-top:24px; font-size:.8rem; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Crop &amp; Fertilizer Recommendation</h1>
+  <p class="sub">Enter soil and weather values to get the top 3 recommendations with confidence.</p>
+  <div class="grid">
+    <form class="card" id="crop-form">
+      <h2>Crop recommendation</h2>
+      <label>Nitrogen (N)<input name="N" type="number" step="any" required></label>
+      <label>Phosphorous (P)<input name="P" type="number" step="any" required></label>
+      <label>Potassium (K)<input name="K" type="number" step="any" required></label>
+      <label>Temperature (°C)<input name="temperature" type="number" step="any" required></label>
+      <label>Humidity (%)<input name="humidity" type="number" step="any" required></label>
+      <label>Soil pH<input name="ph" type="number" step="any" required></label>
+      <label>Rainfall (mm)<input name="rainfall" type="number" step="any" required></label>
+      <button type="submit">Recommend crop</button>
+      <div class="result" id="crop-result"></div>
+    </form>
+
+    <form class="card" id="fert-form">
+      <h2>Fertilizer recommendation</h2>
+      <label>Temperature (°C)<input name="temperature" type="number" step="any" required></label>
+      <label>Humidity (%)<input name="humidity" type="number" step="any" required></label>
+      <label>Soil moisture (%)<input name="moisture" type="number" step="any" required></label>
+      <label>Soil type<select name="soil_type" id="soil_type" required></select></label>
+      <label>Crop type<select name="crop_type" id="crop_type" required></select></label>
+      <label>Nitrogen<input name="nitrogen" type="number" step="any" required></label>
+      <label>Potassium<input name="potassium" type="number" step="any" required></label>
+      <label>Phosphorous<input name="phosphorous" type="number" step="any" required></label>
+      <button type="submit">Recommend fertilizer</button>
+      <div class="result" id="fert-result"></div>
+    </form>
+  </div>
+  <p class="note">Decision-support only. Confirm with a local agronomist before acting.</p>
+</main>
+
+<script>
+function fillSelect(id, values) {
+  const el = document.getElementById(id);
+  el.replaceChildren(...values.map(v => new Option(v, v)));
+}
+
+function errorText(data) {
+  const d = data && data.detail;
+  if (!d) return "Request failed.";
+  if (typeof d === "string") return d;
+  return d.map(e => `${(e.loc || []).slice(1).join(".")}: ${e.msg}`).join("; ");
+}
+
+function render(target, data) {
+  target.replaceChildren();
+  const top = document.createElement("div");
+  top.className = "top";
+  top.textContent = "Best match: " + data.recommendation;
+  target.append(top);
+  for (const item of data.top_k) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const fill = document.createElement("div");
+    fill.className = "fill";
+    fill.style.width = (item.probability * 100).toFixed(1) + "%";
+    const text = document.createElement("span");
+    const a = document.createElement("b"); a.textContent = item.name;
+    const b = document.createElement("em"); b.style.fontStyle = "normal";
+    b.textContent = (item.probability * 100).toFixed(1) + "%";
+    text.append(a, b);
+    row.append(fill, text);
+    target.append(row);
+  }
+}
+
+function wire(formId, resultId, url) {
+  const form = document.getElementById(formId);
+  const out = document.getElementById(resultId);
+  form.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const btn = form.querySelector("button");
+    btn.disabled = true;
+    const body = {};
+    for (const [k, v] of new FormData(form)) {
+      body[k] = form.elements[k].type === "number" ? Number(v) : v;
+    }
+    try {
+      const res = await fetch(url, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(errorText(data));
+      render(out, data);
+    } catch (e) {
+      out.replaceChildren();
+      const p = document.createElement("div");
+      p.className = "err"; p.textContent = e.message;
+      out.append(p);
+    } finally { btn.disabled = false; }
+  });
+}
+
+fetch("/api/v1/options").then(r => r.json()).then(o => {
+  fillSelect("soil_type", o.soil_type || []);
+  fillSelect("crop_type", o.crop_type || []);
+}).catch(() => {});
+
+wire("crop-form", "crop-result", "/api/v1/predict/crop");
+wire("fert-form", "fert-result", "/api/v1/predict/fertilizer");
+</script>
+</body>
+</html>
