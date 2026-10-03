@@ -16,6 +16,18 @@ dataset/       put your two CSVs here
 models/        trained artifacts are written here
 ```
 
+## 🛠️ Installation and Setup
+### Clone the Repository:
+Open a terminal or command prompt on your system.
+Run the following command to clone the repository:
+```bash
+git clone https://github.com/tryadav1176/crop-fertilizer-rs.git
+```
+### Navigate to the cloned repository directory:
+```bash
+cd crop-fertilizer-rs
+```
+
 ## Setup (Windows PowerShell)
 
 ```powershell
