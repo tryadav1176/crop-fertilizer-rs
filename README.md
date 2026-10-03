@@ -2,6 +2,10 @@
 
 Top-3 crop and fertilizer recommendations (with confidence) from soil and weather inputs.
 Scikit-learn `Pipeline` models served through a FastAPI API and a small web page.
+The Crop and Fertilizer Recommendation System is a machine learning-based web application designed to help farmers and agricultural enthusiasts make informed decisions. The system suggests:
+The best crop to cultivate based on soil and environmental conditions.
+The most suitable fertilizer to maximize yield and maintain soil health.
+This solution bridges the gap between modern data-driven insights and traditional farming, promoting sustainable agriculture.
 
 ```
 src/
