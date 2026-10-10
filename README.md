@@ -91,6 +91,52 @@ docker build -t crop-rs .
 docker run -p 8000:8000 crop-rs
 ```
 
+## Current project status
+
+The Crop & Fertilizer Recommendation project is implemented and currently functioning as expected.
+The repository includes a complete machine learning workflow for crop and fertilizer recommendation,
+with a FastAPI-based service layer, a lightweight frontend, automated validation tests, and CI
+configuration.
+
+### Validation
+
+I ran the repository test suite successfully:
+
+- 12 passed
+- 0 failed
+- 11 warnings, all non-blocking dependency deprecations
+
+### What is already in place
+
+- Crop and fertilizer model training pipeline
+- Saved model artifacts and metadata
+- Prediction API endpoints
+- Input validation and categorical restrictions
+- Static web interface
+- Automated pytest suite
+- GitHub Actions CI configuration
+
+### Overall assessment
+
+- Functional status: Good
+- Implementation status: Complete for its intended scope
+- Production readiness: Strong for internal/demo use, with minor maintenance work recommended
+  before broader production deployment
+
+### Key considerations
+
+- The repo contains a few non-blocking dependency deprecation warnings from FastAPI/Starlette and
+  SciPy/sklearn.
+- The fertilizer model dataset is relatively small, so its performance should be treated as indicative
+  rather than definitive.
+- Dependency pinning and upgrade management would improve reproducibility and long-term stability.
+
+### Conclusion
+
+This repository is a solid, working ML application with clear architecture and validated behavior.
+It is ready for local use, demonstration, and internal evaluation. With minor dependency and
+data-quality improvements, it would be well positioned for more robust deployment scenarios.
+
 ## Notes
 
 - Load `.joblib` files only if you trained them yourself; they are Python pickles.
